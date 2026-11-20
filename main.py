@@ -5,7 +5,7 @@ import tkinter as tk
 from src.interfaz import AplicacionRescate
 
 
-def main() -> None:
+def main():
     """Inicializa la ventana principal e inicia el ciclo de eventos."""
     raiz = tk.Tk()
     AplicacionRescate(raiz)

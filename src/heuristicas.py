@@ -1,27 +1,41 @@
 """Heurísticas admisibles utilizadas por A*."""
 
-from __future__ import annotations
+from collections import deque
 
-from src.modelo import Estado, InstanciaRescate, Posicion
-
-
-def distancia_manhattan(origen: Posicion, destino: Posicion) -> int:
+def distancia_manhattan(origen, destino):
     """Calcula una cota inferior de movimientos entre dos celdas."""
     return abs(origen[0] - destino[0]) + abs(origen[1] - destino[1])
 
 
-def victimas_condenadas(instancia: InstanciaRescate, estado: Estado) -> int:
-    """Cuenta víctimas que no pueden alcanzarse antes de su vencimiento.
+def distancia_mas_corta(mapa, origen, destino):
+    """Devuelve la distancia mínima evitando paredes."""
+    if not mapa.es_transitable(origen) or not mapa.es_transitable(destino):
+        return None
 
-    La distancia Manhattan ignora paredes y, por tanto, nunca es mayor que la
-    distancia real que debería recorrer el agente. Si esa cota ya supera los
-    ticks restantes de una víctima, su fallecimiento es inevitable. Por ello
-    este valor es una cota inferior del número de fallecimientos futuros y es
-    admisible para A*.
-    """
+    frontera = deque([(origen, 0)])
+    visitadas = {origen}
+    direcciones = ((-1, 0), (1, 0), (0, 1), (0, -1))
+
+    while frontera:
+        posicion, distancia = frontera.popleft()
+        if posicion == destino:
+            return distancia
+        for cambio_fila, cambio_columna in direcciones:
+            vecina = (posicion[0] + cambio_fila, posicion[1] + cambio_columna)
+            if vecina not in visitadas and mapa.es_transitable(vecina):
+                visitadas.add(vecina)
+                frontera.append((vecina, distancia + 1))
+    return None
+
+
+def victimas_condenadas(instancia, estado):
+    """Cuenta víctimas que no pueden alcanzarse a tiempo."""
     victimas_por_id = instancia.victimas_por_id
-    return sum(
-        distancia_manhattan(estado.posicion, victimas_por_id[identificador].posicion)
-        > victimas_por_id[identificador].ticks_supervivencia - estado.tick_actual
-        for identificador in estado.victimas_vivas
-    )
+    condenadas = 0
+    for identificador in estado.victimas_vivas:
+        victima = victimas_por_id[identificador]
+        distancia = distancia_mas_corta(instancia.mapa, estado.posicion, victima.posicion)
+        ticks_restantes = victima.ticks_supervivencia - estado.tick_actual
+        if distancia is None or distancia > ticks_restantes:
+            condenadas += 1
+    return condenadas

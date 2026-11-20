@@ -1,59 +1,50 @@
 """Implementaciones desde cero de los algoritmos de búsqueda requeridos."""
 
-from __future__ import annotations
-
 from collections import deque
 from dataclasses import dataclass
 import heapq
-from itertools import count
 from time import perf_counter
 
-from src.modelo import Estado, InstanciaRescate
+from src.modelo import Estado
 from src.heuristicas import victimas_condenadas
-from src.simulacion import Transicion, movimientos_posibles
+from src.simulacion import movimientos_posibles
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class NodoBusqueda:
     """Información de una ruta parcial mientras se explora el espacio."""
 
     estado: Estado
-    transiciones: tuple[Transicion, ...]
-    rescatadas: frozenset[str]
-    fallecidas: frozenset[str]
+    transiciones: tuple
+    rescatadas: frozenset
+    fallecidas: frozenset
 
     @property
-    def cantidad_rescatadas(self) -> int:
+    def cantidad_rescatadas(self):
         """Cantidad acumulada de víctimas rescatadas en esta ruta."""
         return len(self.rescatadas)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ResultadoBusqueda:
     """Resultado completo de ejecutar un algoritmo sobre una instancia."""
 
     algoritmo: str
-    transiciones: tuple[Transicion, ...]
-    rescatadas: tuple[str, ...]
-    fallecidas: tuple[str, ...]
+    transiciones: tuple
+    rescatadas: tuple
+    fallecidas: tuple
     ticks_totales: int
     nodos_explorados: int
     tiempo_segundos: float
 
     @property
-    def acciones(self) -> tuple[str, ...]:
+    def acciones(self):
         """Ruta compacta expresada como acciones cardinales."""
         return tuple(transicion.accion for transicion in self.transiciones)
 
 
-def busqueda_amplitud(instancia: InstanciaRescate) -> ResultadoBusqueda:
-    """Explora el espacio por niveles y conserva la mejor solución terminal.
-
-    La búsqueda no se detiene al encontrar la primera solución: la meta es
-    maximizar rescates, por lo que se evalúan todas las rutas relevantes hasta
-    que no quede ninguna víctima viva. Entre soluciones con los mismos
-    rescates, se conserva la de menor cantidad de ticks.
-    """
+def busqueda_amplitud(instancia):
+    """Busca por niveles."""
     inicio_tiempo = perf_counter()
     estado_inicial = instancia.estado_inicial()
     nodo_inicial = NodoBusqueda(
@@ -62,9 +53,9 @@ def busqueda_amplitud(instancia: InstanciaRescate) -> ResultadoBusqueda:
         rescatadas=frozenset(),
         fallecidas=frozenset(),
     )
-    frontera: deque[NodoBusqueda] = deque([nodo_inicial])
-    mejor_rescates_por_estado: dict[Estado, int] = {estado_inicial: 0}
-    mejor_solucion: NodoBusqueda | None = None
+    frontera = deque([nodo_inicial])
+    mejor_rescates_por_estado = {estado_inicial: 0}
+    mejor_solucion = None
     nodos_explorados = 0
 
     while frontera:
@@ -90,20 +81,14 @@ def busqueda_amplitud(instancia: InstanciaRescate) -> ResultadoBusqueda:
             frontera.append(siguiente)
 
     if mejor_solucion is None:
-        # Con una cantidad finita de ticks toda víctima termina rescatada o
-        # fallecida; esta protección evita devolver un resultado incompleto.
+        # Evita devolver un resultado incompleto.
         raise RuntimeError("No se encontró un estado terminal para la instancia.")
 
     return _crear_resultado("BFS", mejor_solucion, nodos_explorados, inicio_tiempo)
 
 
-def busqueda_costo_uniforme(instancia: InstanciaRescate) -> ResultadoBusqueda:
-    """Explora las rutas por costo acumulado mediante una cola de prioridad.
-
-    Como cada acción cuesta un tick, el costo de una ruta coincide con su
-    cantidad de movimientos. Aun así, la implementación usa explícitamente
-    una cola de prioridad, como corresponde a UCS.
-    """
+def busqueda_costo_uniforme(instancia):
+    """Busca por costo acumulado."""
     inicio_tiempo = perf_counter()
     estado_inicial = instancia.estado_inicial()
     nodo_inicial = NodoBusqueda(
@@ -112,10 +97,10 @@ def busqueda_costo_uniforme(instancia: InstanciaRescate) -> ResultadoBusqueda:
         rescatadas=frozenset(),
         fallecidas=frozenset(),
     )
-    consecutivo = count()
-    frontera: list[tuple[int, int, NodoBusqueda]] = [(0, next(consecutivo), nodo_inicial)]
-    mejor_rescates_por_estado: dict[Estado, int] = {estado_inicial: 0}
-    mejor_solucion: NodoBusqueda | None = None
+    consecutivo = 0
+    frontera = [(0, consecutivo, nodo_inicial)]
+    mejor_rescates_por_estado = {estado_inicial: 0}
+    mejor_solucion = None
     nodos_explorados = 0
 
     while frontera:
@@ -138,21 +123,16 @@ def busqueda_costo_uniforme(instancia: InstanciaRescate) -> ResultadoBusqueda:
             if siguiente.cantidad_rescatadas <= rescates_previos:
                 continue
             mejor_rescates_por_estado[siguiente.estado] = siguiente.cantidad_rescatadas
-            heapq.heappush(frontera, (costo + 1, next(consecutivo), siguiente))
+            consecutivo += 1
+            heapq.heappush(frontera, (costo + 1, consecutivo, siguiente))
 
     if mejor_solucion is None:
         raise RuntimeError("No se encontró un estado terminal para la instancia.")
     return _crear_resultado("UCS", mejor_solucion, nodos_explorados, inicio_tiempo)
 
 
-def busqueda_profundidad_iterativa(instancia: InstanciaRescate) -> ResultadoBusqueda:
-    """Ejecuta búsquedas con límite creciente de profundidad (IDDFS).
-
-    Se revisan todos los límites hasta que haya transcurrido un tick después
-    del mayor plazo de supervivencia. En ese momento toda víctima que no fue
-    rescatada necesariamente habrá fallecido, por lo cual el espacio relevante
-    quedó cubierto.
-    """
+def busqueda_profundidad_iterativa(instancia):
+    """Busca con profundidad iterativa."""
     inicio_tiempo = perf_counter()
     estado_inicial = instancia.estado_inicial()
     nodo_inicial = NodoBusqueda(
@@ -162,13 +142,13 @@ def busqueda_profundidad_iterativa(instancia: InstanciaRescate) -> ResultadoBusq
         fallecidas=frozenset(),
     )
     profundidad_maxima = max(v.ticks_supervivencia for v in instancia.victimas) + 1
-    mejor_solucion: NodoBusqueda | None = None
+    mejor_solucion = None
     nodos_explorados = 0
 
     for limite in range(profundidad_maxima + 1):
-        mejor_rescates_por_estado: dict[Estado, int] = {estado_inicial: 0}
+        mejor_rescates_por_estado = {estado_inicial: 0}
 
-        def explorar(nodo: NodoBusqueda, restante: int) -> None:
+        def explorar(nodo, restante):
             nonlocal mejor_solucion, nodos_explorados
             nodos_explorados += 1
             if not nodo.estado.victimas_vivas:
@@ -198,13 +178,8 @@ def busqueda_profundidad_iterativa(instancia: InstanciaRescate) -> ResultadoBusq
     return _crear_resultado("IDDFS", mejor_solucion, nodos_explorados, inicio_tiempo)
 
 
-def busqueda_a_estrella(instancia: InstanciaRescate) -> ResultadoBusqueda:
-    """Busca rutas que minimizan fallecimientos con A* y una heurística admisible.
-
-    ``g(n)`` es el número de víctimas que ya fallecieron y ``h(n)`` estima
-    cuántas más necesariamente fallecerán. Minimizar ``g + h`` equivale a
-    maximizar el número de rescates.
-    """
+def busqueda_a_estrella(instancia):
+    """Busca rutas con A*."""
     inicio_tiempo = perf_counter()
     estado_inicial = instancia.estado_inicial()
     nodo_inicial = NodoBusqueda(
@@ -213,20 +188,28 @@ def busqueda_a_estrella(instancia: InstanciaRescate) -> ResultadoBusqueda:
         rescatadas=frozenset(),
         fallecidas=frozenset(),
     )
-    consecutivo = count()
+    consecutivo = 0
     prioridad_inicial = victimas_condenadas(instancia, estado_inicial)
-    frontera: list[tuple[int, int, int, NodoBusqueda]] = [
-        (prioridad_inicial, 0, next(consecutivo), nodo_inicial)
-    ]
-    mejores_fallecimientos_por_estado: dict[Estado, int] = {estado_inicial: 0}
-    mejor_solucion: NodoBusqueda | None = None
+    frontera = [(prioridad_inicial, 0, consecutivo, nodo_inicial)]
+    mejores_fallecimientos_por_estado = {estado_inicial: 0}
+    mejor_solucion = None
     nodos_explorados = 0
 
     while frontera:
-        _, _, _, nodo = heapq.heappop(frontera)
+        prioridad, _, _, nodo = heapq.heappop(frontera)
         fallecimientos = len(nodo.fallecidas)
         if fallecimientos > mejores_fallecimientos_por_estado.get(nodo.estado, fallecimientos):
             continue
+
+        # Descarta rutas que no pueden mejorar la mejor solución.
+        if mejor_solucion is not None:
+            fallecimientos_mejor = len(mejor_solucion.fallecidas)
+            ticks_mejor = mejor_solucion.estado.tick_actual
+            if prioridad > fallecimientos_mejor or (
+                prioridad == fallecimientos_mejor
+                and nodo.estado.tick_actual >= ticks_mejor
+            ):
+                continue
         nodos_explorados += 1
 
         if not nodo.estado.victimas_vivas:
@@ -248,17 +231,26 @@ def busqueda_a_estrella(instancia: InstanciaRescate) -> ResultadoBusqueda:
             mejores_fallecimientos_por_estado[siguiente.estado] = siguientes_fallecimientos
             heuristica = victimas_condenadas(instancia, siguiente.estado)
             prioridad = siguientes_fallecimientos + heuristica
+            if mejor_solucion is not None:
+                fallecimientos_mejor = len(mejor_solucion.fallecidas)
+                ticks_mejor = mejor_solucion.estado.tick_actual
+                if prioridad > fallecimientos_mejor or (
+                    prioridad == fallecimientos_mejor
+                    and siguiente.estado.tick_actual >= ticks_mejor
+                ):
+                    continue
             heapq.heappush(
                 frontera,
-                (prioridad, siguiente.estado.tick_actual, next(consecutivo), siguiente),
+                (prioridad, siguiente.estado.tick_actual, consecutivo + 1, siguiente),
             )
+            consecutivo += 1
 
     if mejor_solucion is None:
         raise RuntimeError("No se encontró un estado terminal para la instancia.")
     return _crear_resultado("A*", mejor_solucion, nodos_explorados, inicio_tiempo)
 
 
-def comparar_algoritmos(instancia: InstanciaRescate) -> tuple[ResultadoBusqueda, ...]:
+def comparar_algoritmos(instancia):
     """Ejecuta los cuatro algoritmos y devuelve resultados comparables."""
     return (
         busqueda_amplitud(instancia),
@@ -268,7 +260,7 @@ def comparar_algoritmos(instancia: InstanciaRescate) -> tuple[ResultadoBusqueda,
     )
 
 
-def _es_mejor_solucion(candidata: NodoBusqueda, actual: NodoBusqueda | None) -> bool:
+def _es_mejor_solucion(candidata, actual):
     """Ordena soluciones por rescates máximos y, en empate, menos ticks."""
     if actual is None:
         return True
@@ -278,12 +270,7 @@ def _es_mejor_solucion(candidata: NodoBusqueda, actual: NodoBusqueda | None) -> 
     )
 
 
-def _crear_resultado(
-    algoritmo: str,
-    solucion: NodoBusqueda,
-    nodos_explorados: int,
-    inicio_tiempo: float,
-) -> ResultadoBusqueda:
+def _crear_resultado(algoritmo, solucion, nodos_explorados, inicio_tiempo):
     """Convierte una solución interna en el formato público de resultados."""
     return ResultadoBusqueda(
         algoritmo=algoritmo,

@@ -1,13 +1,9 @@
 """Interfaz gráfica de escritorio desarrollada exclusivamente con Tkinter."""
 
-from __future__ import annotations
-
-from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from src.busquedas import ResultadoBusqueda, comparar_algoritmos
-from src.modelo import Estado, InstanciaRescate
+from src.busquedas import comparar_algoritmos
 from src.parser import ErrorDeFormato, cargar_instancia
 
 
@@ -25,7 +21,7 @@ COLORES = {
 class AplicacionRescate(ttk.Frame):
     """Ventana que permite cargar, resolver y animar una instancia."""
 
-    def __init__(self, raiz: tk.Tk) -> None:
+    def __init__(self, raiz):
         super().__init__(raiz, padding=12)
         self.raiz = raiz
         self.raiz.title("Agente de Rescate con Víctimas en Riesgo")
@@ -38,16 +34,16 @@ class AplicacionRescate(ttk.Frame):
         self.algoritmo = tk.StringVar(value="BFS")
         self.velocidad_ms = tk.IntVar(value=500)
         self.mensaje = tk.StringVar(value="Carga un mapa y un archivo de víctimas.")
-        self.instancia: InstanciaRescate | None = None
-        self.resultado_seleccionado: ResultadoBusqueda | None = None
+        self.instancia = None
+        self.resultado_seleccionado = None
         self.indice_paso = 0
-        self.estado_actual: Estado | None = None
-        self.rescatadas: set[str] = set()
-        self.fallecidas: set[str] = set()
+        self.estado_actual = None
+        self.rescatadas = set()
+        self.fallecidas = set()
 
         self._crear_controles()
 
-    def _crear_controles(self) -> None:
+    def _crear_controles(self):
         """Construye los paneles de carga, configuración, mapa y resultados."""
         carga = ttk.LabelFrame(self, text="1. Carga de archivos", padding=8)
         carga.grid(row=0, column=0, sticky="ew")
@@ -107,19 +103,19 @@ class AplicacionRescate(ttk.Frame):
         self.tabla.grid(row=1, column=0, sticky="nsew", pady=(12, 0))
         ttk.Label(self, textvariable=self.mensaje).grid(row=3, column=0, sticky="w", pady=(8, 0))
 
-    def _elegir_mapa(self) -> None:
+    def _elegir_mapa(self):
         ruta = filedialog.askopenfilename(title="Selecciona mapa.txt", filetypes=(("Texto", "*.txt"), ("Todos", "*.*")))
         if ruta:
             self.ruta_mapa.set(ruta)
             self._cargar_si_es_posible()
 
-    def _elegir_victimas(self) -> None:
+    def _elegir_victimas(self):
         ruta = filedialog.askopenfilename(title="Selecciona victimas.txt", filetypes=(("Texto", "*.txt"), ("Todos", "*.*")))
         if ruta:
             self.ruta_victimas.set(ruta)
             self._cargar_si_es_posible()
 
-    def _cargar_si_es_posible(self) -> None:
+    def _cargar_si_es_posible(self):
         if not self.ruta_mapa.get() or not self.ruta_victimas.get():
             return
         try:
@@ -133,7 +129,7 @@ class AplicacionRescate(ttk.Frame):
         self._reiniciar_animacion()
         self._dibujar_mapa()
 
-    def iniciar_rescate(self) -> None:
+    def iniciar_rescate(self):
         """Ejecuta la comparación y prepara la animación del algoritmo elegido."""
         if self.instancia is None:
             self._cargar_si_es_posible()
@@ -165,7 +161,7 @@ class AplicacionRescate(ttk.Frame):
         self.mensaje.set(f"Simulando la ruta calculada por {self.algoritmo.get()}.")
         self._animar_siguiente()
 
-    def _reiniciar_animacion(self) -> None:
+    def _reiniciar_animacion(self):
         if self.instancia is None:
             return
         self.indice_paso = 0
@@ -174,7 +170,7 @@ class AplicacionRescate(ttk.Frame):
         self.fallecidas = set()
         self.resumen.set("Simulación preparada. Tick actual: 0")
 
-    def _animar_siguiente(self) -> None:
+    def _animar_siguiente(self):
         if self.instancia is None or self.resultado_seleccionado is None or self.estado_actual is None:
             return
         self._dibujar_mapa()
@@ -200,7 +196,7 @@ class AplicacionRescate(ttk.Frame):
         )
         self.raiz.after(max(100, self.velocidad_ms.get()), self._animar_siguiente)
 
-    def _dibujar_mapa(self) -> None:
+    def _dibujar_mapa(self):
         if self.instancia is None or self.estado_actual is None:
             return
         mapa = self.instancia.mapa

@@ -1,14 +1,12 @@
 """Entidades inmutables que describen una instancia del rescate."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 
-Posicion = tuple[int, int]
+Posicion = tuple
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Victima:
     """Víctima ubicada en una celda con un límite de supervivencia."""
 
@@ -18,12 +16,12 @@ class Victima:
     ticks_supervivencia: int
 
     @property
-    def posicion(self) -> Posicion:
+    def posicion(self):
         """Devuelve la posición de la víctima como ``(fila, columna)``."""
         return (self.fila, self.columna)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Estado:
     """Nodo del espacio de búsqueda.
 
@@ -34,57 +32,57 @@ class Estado:
 
     fila: int
     columna: int
-    victimas_vivas: frozenset[str]
+    victimas_vivas: frozenset
     tick_actual: int
 
     @property
-    def posicion(self) -> Posicion:
+    def posicion(self):
         """Devuelve la posición actual del agente."""
         return (self.fila, self.columna)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Mapa:
     """Cuadrícula y datos estáticos del entorno de rescate."""
 
-    celdas: tuple[tuple[str, ...], ...]
+    celdas: tuple
     posicion_inicial: Posicion
-    paredes: frozenset[Posicion]
-    etiquetas_victimas: tuple[tuple[str, Posicion], ...] = ()
+    paredes: frozenset
+    etiquetas_victimas: tuple = ()
 
     @property
-    def filas(self) -> int:
+    def filas(self):
         """Número de filas de la cuadrícula."""
         return len(self.celdas)
 
     @property
-    def columnas(self) -> int:
+    def columnas(self):
         """Número de columnas de la cuadrícula."""
         return len(self.celdas[0])
 
-    def esta_dentro(self, posicion: Posicion) -> bool:
+    def esta_dentro(self, posicion):
         """Indica si una posición pertenece a la cuadrícula."""
         fila, columna = posicion
         return 0 <= fila < self.filas and 0 <= columna < self.columnas
 
-    def es_transitable(self, posicion: Posicion) -> bool:
+    def es_transitable(self, posicion):
         """Indica si el agente puede ocupar la posición."""
         return self.esta_dentro(posicion) and posicion not in self.paredes
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class InstanciaRescate:
     """Datos completos de una ejecución: mapa y víctimas registradas."""
 
     mapa: Mapa
-    victimas: tuple[Victima, ...]
+    victimas: tuple
 
     @property
-    def victimas_por_id(self) -> dict[str, Victima]:
+    def victimas_por_id(self):
         """Crea un índice para consultar una víctima por su identificador."""
         return {victima.identificador: victima for victima in self.victimas}
 
-    def estado_inicial(self) -> Estado:
+    def estado_inicial(self):
         """Construye el estado inicial indicado en la especificación."""
         return Estado(
             fila=self.mapa.posicion_inicial[0],

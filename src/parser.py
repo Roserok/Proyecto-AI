@@ -1,17 +1,15 @@
 """Lectura y validación de los archivos de entrada del proyecto."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
-from src.modelo import InstanciaRescate, Mapa, Posicion, Victima
+from src.modelo import InstanciaRescate, Mapa, Victima
 
 
 class ErrorDeFormato(ValueError):
     """Indica que un archivo de entrada no cumple el formato requerido."""
 
 
-def cargar_instancia(ruta_mapa: str | Path, ruta_victimas: str | Path) -> InstanciaRescate:
+def cargar_instancia(ruta_mapa, ruta_victimas):
     """Carga ambos archivos y valida que representen una instancia coherente."""
     mapa = cargar_mapa(ruta_mapa)
     victimas = cargar_victimas(ruta_victimas)
@@ -19,7 +17,7 @@ def cargar_instancia(ruta_mapa: str | Path, ruta_victimas: str | Path) -> Instan
     return InstanciaRescate(mapa=mapa, victimas=tuple(victimas))
 
 
-def cargar_mapa(ruta: str | Path) -> Mapa:
+def cargar_mapa(ruta):
     """Lee una cuadrícula rectangular con una única posición inicial ``S``.
 
     Cada fila puede escribirse carácter por carácter (por ejemplo, ``#S..#``)
@@ -36,10 +34,10 @@ def cargar_mapa(ruta: str | Path) -> Mapa:
     if columnas == 0 or any(len(fila) != columnas for fila in celdas):
         raise ErrorDeFormato("El mapa debe ser una cuadrícula rectangular no vacía.")
 
-    posiciones_inicio: list[Posicion] = []
-    paredes: set[Posicion] = set()
+    posiciones_inicio = []
+    paredes = set()
     simbolos_permitidos = {"#", ".", "S"}
-    etiquetas_victimas: dict[str, Posicion] = {}
+    etiquetas_victimas = {}
     for fila, contenido in enumerate(celdas):
         for columna, celda in enumerate(contenido):
             es_etiqueta_victima = celda.startswith("V") and len(celda) > 1
@@ -67,7 +65,7 @@ def cargar_mapa(ruta: str | Path) -> Mapa:
     )
 
 
-def cargar_victimas(ruta: str | Path) -> list[Victima]:
+def cargar_victimas(ruta):
     """Lee víctimas con el formato ``id,fila,columna,ticks_supervivencia``."""
     lineas = _lineas_con_contenido(ruta)
     if not lineas:
@@ -78,8 +76,8 @@ def cargar_victimas(ruta: str | Path) -> list[Victima]:
     if encabezado != esperado:
         raise ErrorDeFormato(f"Encabezado inválido. Se esperaba: {esperado}.")
 
-    victimas: list[Victima] = []
-    identificadores: set[str] = set()
+    victimas = []
+    identificadores = set()
     for numero_linea, linea in enumerate(lineas[1:], start=2):
         partes = [parte.strip() for parte in linea.split(",")]
         if len(partes) != 4 or not all(partes):
@@ -105,9 +103,9 @@ def cargar_victimas(ruta: str | Path) -> list[Victima]:
     return victimas
 
 
-def validar_victimas_en_mapa(mapa: Mapa, victimas: list[Victima]) -> None:
+def validar_victimas_en_mapa(mapa, victimas):
     """Comprueba que cada víctima ocupe una celda libre y una posición única."""
-    posiciones: set[Posicion] = set()
+    posiciones = set()
     etiquetas = dict(mapa.etiquetas_victimas)
     for victima in victimas:
         if not mapa.esta_dentro(victima.posicion):
@@ -134,7 +132,7 @@ def validar_victimas_en_mapa(mapa: Mapa, victimas: list[Victima]) -> None:
         raise ErrorDeFormato("Las etiquetas de víctimas del mapa y victimas.txt deben coincidir.")
 
 
-def _lineas_con_contenido(ruta: str | Path) -> list[str]:
+def _lineas_con_contenido(ruta):
     """Obtiene líneas no vacías y elimina espacios exteriores."""
     try:
         with Path(ruta).open(encoding="utf-8") as archivo:
@@ -143,6 +141,6 @@ def _lineas_con_contenido(ruta: str | Path) -> list[str]:
         raise ErrorDeFormato(f"No se pudo leer {ruta!s}: {error}") from error
 
 
-def _separar_fila(linea: str) -> tuple[str, ...]:
+def _separar_fila(linea):
     """Acepta filas compactas o celdas separadas por espacios."""
     return tuple(linea.split()) if any(caracter.isspace() for caracter in linea) else tuple(linea)
