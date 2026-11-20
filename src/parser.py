@@ -1,4 +1,4 @@
-"""Lectura y validación de los archivos de entrada del proyecto."""
+"""Lectura de archivos."""
 
 from pathlib import Path
 
@@ -6,11 +6,11 @@ from src.modelo import InstanciaRescate, Mapa, Victima
 
 
 class ErrorDeFormato(ValueError):
-    """Indica que un archivo de entrada no cumple el formato requerido."""
+    """Error de formato."""
 
 
 def cargar_instancia(ruta_mapa, ruta_victimas):
-    """Carga ambos archivos y valida que representen una instancia coherente."""
+    """Carga mapa y victimas."""
     mapa = cargar_mapa(ruta_mapa)
     victimas = cargar_victimas(ruta_victimas)
     validar_victimas_en_mapa(mapa, victimas)
@@ -18,13 +18,7 @@ def cargar_instancia(ruta_mapa, ruta_victimas):
 
 
 def cargar_mapa(ruta):
-    """Lee una cuadrícula rectangular con una única posición inicial ``S``.
-
-    Cada fila puede escribirse carácter por carácter (por ejemplo, ``#S..#``)
-    o como celdas separadas por espacios (por ejemplo, ``# S . V1 #``). Las
-    etiquetas ``V1``, ``V2``, etc. son opcionales si las posiciones se
-    proporcionan exclusivamente en ``victimas.txt``.
-    """
+    """Lee el mapa."""
     lineas = _lineas_con_contenido(ruta)
     if not lineas:
         raise ErrorDeFormato("El archivo del mapa está vacío.")
@@ -66,7 +60,7 @@ def cargar_mapa(ruta):
 
 
 def cargar_victimas(ruta):
-    """Lee víctimas con el formato ``id,fila,columna,ticks_supervivencia``."""
+    """Lee las victimas."""
     lineas = _lineas_con_contenido(ruta)
     if not lineas:
         raise ErrorDeFormato("El archivo de víctimas está vacío.")
@@ -104,7 +98,7 @@ def cargar_victimas(ruta):
 
 
 def validar_victimas_en_mapa(mapa, victimas):
-    """Comprueba que cada víctima ocupe una celda libre y una posición única."""
+    """Valida las victimas."""
     posiciones = set()
     etiquetas = dict(mapa.etiquetas_victimas)
     for victima in victimas:
@@ -133,7 +127,7 @@ def validar_victimas_en_mapa(mapa, victimas):
 
 
 def _lineas_con_contenido(ruta):
-    """Obtiene líneas no vacías y elimina espacios exteriores."""
+    """Lee lineas utiles."""
     try:
         with Path(ruta).open(encoding="utf-8") as archivo:
             return [linea.strip() for linea in archivo if linea.strip()]
@@ -142,5 +136,5 @@ def _lineas_con_contenido(ruta):
 
 
 def _separar_fila(linea):
-    """Acepta filas compactas o celdas separadas por espacios."""
+    """Separa una fila."""
     return tuple(linea.split()) if any(caracter.isspace() for caracter in linea) else tuple(linea)

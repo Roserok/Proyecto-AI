@@ -1,4 +1,4 @@
-"""Entidades inmutables que describen una instancia del rescate."""
+"""Clases del problema."""
 
 from dataclasses import dataclass
 
@@ -8,7 +8,7 @@ Posicion = tuple
 
 @dataclass(frozen=True)
 class Victima:
-    """Víctima ubicada en una celda con un límite de supervivencia."""
+    """Datos de una victima."""
 
     identificador: str
     fila: int
@@ -17,18 +17,13 @@ class Victima:
 
     @property
     def posicion(self):
-        """Devuelve la posición de la víctima como ``(fila, columna)``."""
+        """Retorna la posicion."""
         return (self.fila, self.columna)
 
 
 @dataclass(frozen=True)
 class Estado:
-    """Nodo del espacio de búsqueda.
-
-    ``victimas_vivas`` contiene únicamente las víctimas que aún no han muerto
-    ni han sido rescatadas. Al ser inmutable, el estado puede usarse con
-    seguridad en conjuntos de visitados y como clave de diccionarios.
-    """
+    """Estado actual."""
 
     fila: int
     columna: int
@@ -37,13 +32,13 @@ class Estado:
 
     @property
     def posicion(self):
-        """Devuelve la posición actual del agente."""
+        """Retorna la posicion."""
         return (self.fila, self.columna)
 
 
 @dataclass(frozen=True)
 class Mapa:
-    """Cuadrícula y datos estáticos del entorno de rescate."""
+    """Datos del mapa."""
 
     celdas: tuple
     posicion_inicial: Posicion
@@ -52,38 +47,38 @@ class Mapa:
 
     @property
     def filas(self):
-        """Número de filas de la cuadrícula."""
+        """Cantidad de filas."""
         return len(self.celdas)
 
     @property
     def columnas(self):
-        """Número de columnas de la cuadrícula."""
+        """Cantidad de columnas."""
         return len(self.celdas[0])
 
     def esta_dentro(self, posicion):
-        """Indica si una posición pertenece a la cuadrícula."""
+        """Revisa limites del mapa."""
         fila, columna = posicion
         return 0 <= fila < self.filas and 0 <= columna < self.columnas
 
     def es_transitable(self, posicion):
-        """Indica si el agente puede ocupar la posición."""
+        """Revisa si una celda es libre."""
         return self.esta_dentro(posicion) and posicion not in self.paredes
 
 
 @dataclass(frozen=True)
 class InstanciaRescate:
-    """Datos completos de una ejecución: mapa y víctimas registradas."""
+    """Mapa y victimas."""
 
     mapa: Mapa
     victimas: tuple
 
     @property
     def victimas_por_id(self):
-        """Crea un índice para consultar una víctima por su identificador."""
+        """Busca victimas por id."""
         return {victima.identificador: victima for victima in self.victimas}
 
     def estado_inicial(self):
-        """Construye el estado inicial indicado en la especificación."""
+        """Crea el estado inicial."""
         return Estado(
             fila=self.mapa.posicion_inicial[0],
             columna=self.mapa.posicion_inicial[1],

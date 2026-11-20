@@ -1,14 +1,14 @@
-"""Heurísticas admisibles utilizadas por A*."""
+"""Funciones para A*."""
 
 from collections import deque
 
 def distancia_manhattan(origen, destino):
-    """Calcula una cota inferior de movimientos entre dos celdas."""
+    """Calcula distancia Manhattan."""
     return abs(origen[0] - destino[0]) + abs(origen[1] - destino[1])
 
 
 def distancia_mas_corta(mapa, origen, destino):
-    """Devuelve la distancia mínima evitando paredes."""
+    """Busca la distancia mas corta."""
     if not mapa.es_transitable(origen) or not mapa.es_transitable(destino):
         return None
 
@@ -29,7 +29,7 @@ def distancia_mas_corta(mapa, origen, destino):
 
 
 def victimas_condenadas(instancia, estado):
-    """Cuenta víctimas que no pueden alcanzarse a tiempo."""
+    """Cuenta victimas sin tiempo."""
     victimas_por_id = instancia.victimas_por_id
     condenadas = 0
     for identificador in estado.victimas_vivas:

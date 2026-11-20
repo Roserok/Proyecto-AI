@@ -1,4 +1,4 @@
-"""Interfaz gráfica de escritorio desarrollada exclusivamente con Tkinter."""
+"""Interfaz con Tkinter."""
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -19,7 +19,7 @@ COLORES = {
 
 
 class AplicacionRescate(ttk.Frame):
-    """Ventana que permite cargar, resolver y animar una instancia."""
+    """Ventana principal."""
 
     def __init__(self, raiz):
         super().__init__(raiz, padding=12)
@@ -44,7 +44,7 @@ class AplicacionRescate(ttk.Frame):
         self._crear_controles()
 
     def _crear_controles(self):
-        """Construye los paneles de carga, configuración, mapa y resultados."""
+        """Crea los controles."""
         carga = ttk.LabelFrame(self, text="1. Carga de archivos", padding=8)
         carga.grid(row=0, column=0, sticky="ew")
         carga.columnconfigure(1, weight=1)
@@ -130,7 +130,7 @@ class AplicacionRescate(ttk.Frame):
         self._dibujar_mapa()
 
     def iniciar_rescate(self):
-        """Ejecuta la comparación y prepara la animación del algoritmo elegido."""
+        """Inicia la simulacion."""
         if self.instancia is None:
             self._cargar_si_es_posible()
         if self.instancia is None:

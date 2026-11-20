@@ -1,4 +1,4 @@
-"""Punto de entrada de la aplicación."""
+"""Inicio del programa."""
 
 import tkinter as tk
 
@@ -6,7 +6,7 @@ from src.interfaz import AplicacionRescate
 
 
 def main():
-    """Inicializa la ventana principal e inicia el ciclo de eventos."""
+    """Inicia la aplicacion."""
     raiz = tk.Tk()
     AplicacionRescate(raiz)
     raiz.minsize(950, 560)

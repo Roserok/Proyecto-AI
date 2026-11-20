@@ -1,4 +1,4 @@
-"""Implementaciones desde cero de los algoritmos de búsqueda requeridos."""
+"""Algoritmos de busqueda."""
 
 from collections import deque
 from dataclasses import dataclass
@@ -12,7 +12,7 @@ from src.simulacion import movimientos_posibles
 
 @dataclass(frozen=True)
 class NodoBusqueda:
-    """Información de una ruta parcial mientras se explora el espacio."""
+    """Datos de una ruta."""
 
     estado: Estado
     transiciones: tuple
@@ -21,13 +21,13 @@ class NodoBusqueda:
 
     @property
     def cantidad_rescatadas(self):
-        """Cantidad acumulada de víctimas rescatadas en esta ruta."""
+        """Cuenta rescates."""
         return len(self.rescatadas)
 
 
 @dataclass(frozen=True)
 class ResultadoBusqueda:
-    """Resultado completo de ejecutar un algoritmo sobre una instancia."""
+    """Resultado de una busqueda."""
 
     algoritmo: str
     transiciones: tuple
@@ -39,7 +39,7 @@ class ResultadoBusqueda:
 
     @property
     def acciones(self):
-        """Ruta compacta expresada como acciones cardinales."""
+        """Lista de acciones."""
         return tuple(transicion.accion for transicion in self.transiciones)
 
 
@@ -81,7 +81,7 @@ def busqueda_amplitud(instancia):
             frontera.append(siguiente)
 
     if mejor_solucion is None:
-        # Evita devolver un resultado incompleto.
+        # Evita resultados incompletos.
         raise RuntimeError("No se encontró un estado terminal para la instancia.")
 
     return _crear_resultado("BFS", mejor_solucion, nodos_explorados, inicio_tiempo)
@@ -201,7 +201,7 @@ def busqueda_a_estrella(instancia):
         if fallecimientos > mejores_fallecimientos_por_estado.get(nodo.estado, fallecimientos):
             continue
 
-        # Descarta rutas que no pueden mejorar la mejor solución.
+        # Descarta rutas sin mejora.
         if mejor_solucion is not None:
             fallecimientos_mejor = len(mejor_solucion.fallecidas)
             ticks_mejor = mejor_solucion.estado.tick_actual
@@ -251,7 +251,7 @@ def busqueda_a_estrella(instancia):
 
 
 def comparar_algoritmos(instancia):
-    """Ejecuta los cuatro algoritmos y devuelve resultados comparables."""
+    """Ejecuta los algoritmos."""
     return (
         busqueda_amplitud(instancia),
         busqueda_costo_uniforme(instancia),
@@ -261,7 +261,7 @@ def comparar_algoritmos(instancia):
 
 
 def _es_mejor_solucion(candidata, actual):
-    """Ordena soluciones por rescates máximos y, en empate, menos ticks."""
+    """Compara dos soluciones."""
     if actual is None:
         return True
     return (candidata.cantidad_rescatadas, -candidata.estado.tick_actual) > (
@@ -271,7 +271,7 @@ def _es_mejor_solucion(candidata, actual):
 
 
 def _crear_resultado(algoritmo, solucion, nodos_explorados, inicio_tiempo):
-    """Convierte una solución interna en el formato público de resultados."""
+    """Crea el resultado final."""
     return ResultadoBusqueda(
         algoritmo=algoritmo,
         transiciones=solucion.transiciones,

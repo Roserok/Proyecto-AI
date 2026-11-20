@@ -1,1 +1,1 @@
-"""Módulos del Proyecto 1: Agente de Rescate."""
+"""Modulos del proyecto."""

@@ -1,11 +1,11 @@
-"""Reglas de transición y utilidades para la simulación del rescate."""
+"""Reglas de simulacion."""
 
 from dataclasses import dataclass
 
 from src.modelo import Estado
 
 
-# Direcciones permitidas.
+# Direcciones disponibles.
 DIRECCIONES = (
     ("N", -1, 0),
     ("S", 1, 0),
@@ -16,12 +16,7 @@ DIRECCIONES = (
 
 @dataclass(frozen=True)
 class Transicion:
-    """Resultado de efectuar un movimiento válido del agente.
-
-    Los identificadores de ``rescatadas`` y ``fallecidas`` corresponden solo
-    al tick que acaba de transcurrir. El historial completo se conservará en
-    la ruta que produzcan los algoritmos de búsqueda.
-    """
+    """Resultado de un movimiento."""
 
     accion: str
     estado: Estado
@@ -30,11 +25,7 @@ class Transicion:
 
 
 def movimientos_posibles(instancia, estado):
-    """Genera todas las transiciones permitidas desde un estado.
-
-    No se incluye una acción de espera porque la guía exige que el agente se
-    mueva en cada turno.
-    """
+    """Genera los movimientos posibles."""
     transiciones = []
     for accion, cambio_fila, cambio_columna in DIRECCIONES:
         destino = (estado.fila + cambio_fila, estado.columna + cambio_columna)
@@ -44,11 +35,7 @@ def movimientos_posibles(instancia, estado):
 
 
 def aplicar_movimiento(instancia, estado, accion):
-    """Aplica una acción cardinal y resuelve rescates y muertes del nuevo tick.
-
-    Una víctima se rescata al llegar si ``tick_actual <= ticks_supervivencia``.
-    Si no se rescata y el tick ya es mayor que su límite, fallece.
-    """
+    """Aplica un movimiento."""
     cambios = {nombre: (fila, columna) for nombre, fila, columna in DIRECCIONES}
     if accion not in cambios:
         raise ValueError(f"Acción no válida: {accion!r}.")
